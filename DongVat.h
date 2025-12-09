@@ -6,11 +6,75 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <vector>
 using namespace std;
 
-/*---------------------------------------------------------
-    LỚP CƠ SỞ: CThuNuoi
----------------------------------------------------------*/
+// ================= TIEN ICH =================
+void Clear(){
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+}
+
+void Pause(){
+    cout << "\nNhan Enter de tiep tuc...";
+    cin.ignore();
+    cin.get();
+}
+
+void TieuDe(const string &s){
+    Clear();
+    cout << "=============================\n";
+    cout << s << "\n";
+    cout << "=============================\n\n";
+}
+
+// ========== HÀM XUẤT BẢNG CÓ PHÂN TRANG ==========
+template <typename T>
+void XuatBangDanhSach(const vector<T*> &ds){
+    if(ds.empty()){
+        cout << "Danh sach rong!";
+        Pause();
+        return;
+    }
+
+    const int pageSize = 10;
+    int total = ds.size();
+    int page = 0;
+
+    while(true){
+        Clear();
+        cout << "----- DANH SACH (Trang " << page+1 << "/" << (total+pageSize-1)/pageSize << ") -----\n\n";
+
+        cout << left
+             << setw(10) << "Ma"
+             << setw(15) << "Ten"
+             << setw(10) << "Loai"
+             << setw(6)  << "Tuoi"
+             << setw(10) << "Kg"
+             << setw(8)  << "Ban?"
+             << setw(10) << "Gia" << "\n";
+
+        cout << string(69, '-') << "\n";
+
+        int start = page * pageSize;
+        int end = min(start + pageSize, total);
+
+        for(int i = start; i < end; i++)
+            ds[i]->XuatBang();
+
+        if(end >= total){ Pause(); return; }
+
+        cout << "\nNhan Enter xem trang tiep...";
+        cin.ignore();
+        cin.get();
+        page++;
+    }
+}
+
+// ================= CLASS CThuNuoi (DUY NHAT) =================
 class CThuNuoi {
 protected:
     string MaSo;
@@ -25,17 +89,27 @@ public:
     CThuNuoi() : Tuoi(0), TrongLuong(0), GiaBanThucTe(0), DaBan(false) {}
     virtual ~CThuNuoi() {}
 
+    // Nhap: cho phep nhap MaSo = "0" de huy (thoat)
     virtual void Nhap() {
+        TieuDe("Nhap thong tin thu nuoi (nhap 0 de huy)");
+
         cout << "Nhap ma so: ";
         cin >> MaSo;
+        if (MaSo == "0") { cin.ignore(); return; }
         cin.ignore();
-        cout << "Nhap ten thu nuoi: ";
+
+        cout << "Nhap ten thu nuoi (nhap 0 de huy): ";
         getline(cin, Ten);
+        if (Ten == "0") { return; }
+
         cout << "Nhap tuoi: ";
         cin >> Tuoi;
         cout << "Nhap trong luong (kg): ";
         cin >> TrongLuong;
+        cin.ignore();
+
         DaBan = false;
+        GiaBanThucTe = 0;
     }
 
     virtual void Xuat() {
@@ -58,6 +132,19 @@ public:
         GiaBanThucTe = giaBan;
         DaBan = true;
         cout << "Ban thanh cong voi gia: " << fixed << setprecision(0) << GiaBanThucTe << " VND\n";
+    }
+
+    // ====== THEM – HAM XUAT THEO BANG ======
+    virtual void XuatBang() const {
+        cout << left
+            << setw(10) << MaSo
+            << setw(15) << Ten
+            << setw(10) << Loai
+            << setw(6)  << Tuoi
+            << setw(10) << TrongLuong
+            << setw(8)  << (DaBan ? "X" : "")
+            << setw(10) << fixed << setprecision(0) << GiaBanThucTe
+            << "\n";
     }
 
     // Getter / Setter
@@ -91,20 +178,22 @@ class CBo : public CThuNuoi {
 public:
     CBo() : LuongSua(0), SoNgayChoSua(0) {}
     void Nhap() override {
-        CThuNuoi::Nhap();
+        TieuDe("Quan ly Bo -> Them Bo (nhap 0 de huy)");
+        CThuNuoi::Nhap(); if (MaSo == "0" || Ten == "0") { return; }
         Loai = "Bo";
         cout << "Nhap luong sua (lit/ngay): ";
         cin >> LuongSua;
         cout << "Nhap so ngay cho sua: ";
         cin >> SoNgayChoSua;
+        cin.ignore();
     }
     void Xuat() override {
         CThuNuoi::Xuat();
         cout << "Luong sua: " << LuongSua
              << " | So ngay cho sua: " << SoNgayChoSua << endl;
-}
+    }
 
-    // Getter/Setter riêng
+    // Getter/Setter rieng
     float GetLuongSua() const { return LuongSua; }
     int GetSoNgayChoSua() const { return SoNgayChoSua; }
     void setLuongSua(float x) { LuongSua = x; }
@@ -121,12 +210,14 @@ class CHeo : public CThuNuoi {
 public:
     CHeo() : TyLeMo(0), SanLuongThit(0) {}
     void Nhap() override {
-        CThuNuoi::Nhap();
+        TieuDe("Quan ly Heo -> Them Heo (nhap 0 de huy)");
+        CThuNuoi::Nhap(); if (MaSo == "0" || Ten == "0") { return; }
         Loai = "Heo";
         cout << "Nhap ty le mo (%): ";
         cin >> TyLeMo;
         cout << "Nhap san luong thit (kg): ";
         cin >> SanLuongThit;
+        cin.ignore();
     }
     void Xuat() override {
         CThuNuoi::Xuat();
@@ -150,12 +241,14 @@ class CGa : public CThuNuoi {
 public:
     CGa() : SoTrungNgay(0), GiaTrung(0) {}
     void Nhap() override {
-        CThuNuoi::Nhap();
+        TieuDe("Quan ly Ga -> Them Ga (nhap 0 de huy)");
+        CThuNuoi::Nhap(); if (MaSo == "0" || Ten == "0") { return; }
         Loai = "Ga";
         cout << "Nhap so trung de/ngay: ";
         cin >> SoTrungNgay;
         cout << "Nhap gia trung (VND): ";
         cin >> GiaTrung;
+        cin.ignore();
     }
     void Xuat() override {
         CThuNuoi::Xuat();
@@ -185,6 +278,7 @@ public:
     CDanhSachThuNuoi() : head(nullptr) {}
 
     void Them(CThuNuoi *x) {
+        if (!x) return;
         Node *p = new Node(x);
         if (!head) head = p;
         else {
@@ -194,6 +288,18 @@ public:
         }
     }
 
+    // Chuyen sang vector de dung XuatBangDanhSach
+    vector<CThuNuoi*> ToVector() {
+        vector<CThuNuoi*> v;
+        Node *p = head;
+        while (p) {
+            v.push_back(p->data);
+            p = p->next;
+        }
+        return v;
+    }
+
+    // Giữ lại XuatDanhSach theo nhóm (khong thay)
     void XuatDanhSach() {
         bool coBo=false, coHeo=false, coGa=false;
         Node *p = head;
@@ -212,7 +318,7 @@ public:
         cout << "\n=== DANH SACH HEO ===\n";
         p = head;
         while (p) {
-if (p->data->GetLoai() == "Heo") {
+            if (p->data->GetLoai() == "Heo") {
                 p->data->Xuat();
                 coHeo = true;
             }
@@ -230,6 +336,12 @@ if (p->data->GetLoai() == "Heo") {
             p = p->next;
         }
         if (!coGa) cout << "(Khong co Ga)\n";
+    }
+
+    // Xuat theo bang phan trang (giup UI gọn)
+    void XuatDanhSachBang() {
+        vector<CThuNuoi*> v = ToVector();
+        XuatBangDanhSach(v);
     }
 
     void BanThuNuoi(string ma, float giaBan) {
@@ -256,31 +368,30 @@ if (p->data->GetLoai() == "Heo") {
     }
     
     bool XoaThuNuoi(string ma) {
-    if (!head) return false;
+        if (!head) return false;
 
-    // Trường hợp xóa đầu danh sách
-    if (head->data->GetMaSo() == ma) {
-        Node *temp = head;
-        head = head->next;
-        delete temp->data;
-        delete temp;
-        return true;
-    }
-
-    Node *p = head;
-    while (p->next) {
-        if (p->next->data->GetMaSo() == ma) {
-            Node *temp = p->next;
-            p->next = temp->next;
+        // Trường hợp xóa đầu danh sách
+        if (head->data->GetMaSo() == ma) {
+            Node *temp = head;
+            head = head->next;
             delete temp->data;
             delete temp;
             return true;
         }
-        p = p->next;
-    }
-    return false;
-}
 
+        Node *p = head;
+        while (p->next) {
+            if (p->next->data->GetMaSo() == ma) {
+                Node *temp = p->next;
+                p->next = temp->next;
+                delete temp->data;
+                delete temp;
+                return true;
+            }
+            p = p->next;
+        }
+        return false;
+    }
 
     /*-----------------------------------------------------
         LƯU VÀ ĐỌC FILE RIÊNG CHO TỪNG LOẠI
@@ -321,7 +432,8 @@ if (p->data->GetLoai() == "Heo") {
 
         cout << "Da luu danh sach vao 3 file!\n";
     }
-void DocFile() {
+
+    void DocFile() {
         auto safe_stof = [](string s) -> float {
             try { return stof(s); } catch (...) { return 0; }
         };
@@ -400,35 +512,59 @@ public:
     void MenuChinh() {
         int chon;
         do {
-            cout << "\n===== MENU QUAN LY TRANG TRAI =====\n";
-            cout << "1. Them Bo\n2. Them Heo\n3. Them Ga\n4. Hien thi danh sach\n5. Ban thu nuoi\n6. Xem tong doanh thu\n7. Luu danh sach ra file\n8. Xoa thu nuoi\n0. Thoat\nChon: ";
+            TieuDe("MENU QUAN LY TRANG TRAI");
+            cout << "1. Them Bo\n2. Them Heo\n3. Them Ga\n4. Hien thi danh sach (bang)\n5. Ban thu nuoi\n6. Xem tong doanh thu\n7. Luu danh sach ra file\n8. Xoa thu nuoi\n0. Thoat\nChon: ";
             cin >> chon;
+            cin.ignore();
 
-            if (chon == 1) 
-            { CThuNuoi *x = new CBo(); x->Nhap(); ds.Them(x); }
-            else if (chon == 2) { CThuNuoi *x = new CHeo(); x->Nhap(); ds.Them(x); }
-            else if (chon == 3) { CThuNuoi *x = new CGa(); x->Nhap(); ds.Them(x); }
-            else if (chon == 4) ds.XuatDanhSach();
+            if (chon == 1) {
+                CThuNuoi *x = new CBo();
+                x->Nhap();
+                // Neu NSH nhap huy (MaSo==\"0\" hoac Ten==\"0\") thi khong them
+                if (x->GetMaSo() != "0" && x->GetMaSo() != "") ds.Them(x);
+                else delete x;
+            }
+            else if (chon == 2) {
+                CThuNuoi *x = new CHeo();
+                x->Nhap();
+                if (x->GetMaSo() != "0" && x->GetMaSo() != "") ds.Them(x);
+                else delete x;
+            }
+            else if (chon == 3) {
+                CThuNuoi *x = new CGa();
+                x->Nhap();
+                if (x->GetMaSo() != "0" && x->GetMaSo() != "") ds.Them(x);
+                else delete x;
+            }
+            else if (chon == 4) {
+                // Goi ham bang phan trang
+                ds.XuatDanhSachBang();
+            }
             else if (chon == 5) {
                 string ma; float gia;
                 cout << "Nhap ma thu can ban: "; cin >> ma;
                 cout << "Nhap gia ban: "; cin >> gia;
                 ds.BanThuNuoi(ma, gia);
+                Pause();
             }
-            else if (chon == 6)
-cout << "Tong doanh thu: " << fixed << setprecision(0) << ds.TongDoanhThu() << " VND\n";
-            else if (chon == 7)
+            else if (chon == 6) {
+                cout << "Tong doanh thu: " << fixed << setprecision(0) << ds.TongDoanhThu() << " VND\n";
+                Pause();
+            }
+            else if (chon == 7) {
                 ds.LuuFile();
+                Pause();
+            }
             else if (chon == 8) {
-    string ma;
-    cout << "Nhap ma thu muon xoa: ";
-    cin >> ma;
-    if (ds.XoaThuNuoi(ma))
-        cout << "Da xoa thanh cong!\n";
-    else
-        cout << "Khong tim thay ma thu nuoi!\n";
-}
-
+                string ma;
+                cout << "Nhap ma thu muon xoa: ";
+                cin >> ma;
+                if (ds.XoaThuNuoi(ma))
+                    cout << "Da xoa thanh cong!\n";
+                else
+                    cout << "Khong tim thay ma thu nuoi!\n";
+                Pause();
+            }
 
         } while (chon != 0);
 
@@ -437,4 +573,3 @@ cout << "Tong doanh thu: " << fixed << setprecision(0) << ds.TongDoanhThu() << "
 };
 
 #endif
-
